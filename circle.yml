@@ -1,0 +1,26 @@
+machine:
+  node:
+    version: 8.11.1
+  services:
+    - docker
+  environment:
+    MOCHA_OPTS: --reporter mocha-junit-reporter --reporter-options mochaFile=$CIRCLE_TEST_REPORTS/mocha/junit.xml
+    ESLINT_OPTS: --quiet --format junit -o $CIRCLE_TEST_REPORTS/eslint.xml
+
+dependencies:
+  pre:
+    - 'echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc'
+    - npm i -g npm
+
+test:
+  pre:
+    - mkdir -p $CIRCLE_TEST_REPORTS/mocha
+  override:
+    - npm test
+
+deployment:
+  all:
+    branch: [master, develop]
+    commands:
+      - ./scripts/release.sh
+

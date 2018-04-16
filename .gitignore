@@ -1,0 +1,24 @@
+.DS_Store
+*.csv
+*.dat
+*.iml
+*.log
+*.out
+*.pid
+*.seed
+*.sublime-*
+*.swo
+*.swp
+*.tgz
+*.xml
+.idea
+.project
+.strong-pm
+.tern-port
+.coveralls.yml
+
+#Build Artifacts
+dist
+coverage
+node_modules
+

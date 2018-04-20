@@ -25,6 +25,15 @@ export interface Context {
 	// or deadlineExceededErr if the context's deadline passed.
 	// After error() returns a non-nil error, successive calls to error() return the same error.
 	error(): ErrorType;
+
+	// value returns the value associated with this context for key, or null
+	// if no value is associated with key. Successive calls to Value with
+	// the same key returns the same result.
+	//
+	// Use context values only for request-scoped data that transits
+	// processes and API boundaries, not for passing optional parameters to
+	// functions.
+	value<K, V>(key: K): V | null;
 }
 
 // canceledErr is the error returned by Context.error() when the context is canceled.
@@ -51,6 +60,11 @@ class EmptyCtx implements Context {
 	}
 
 	error(): ErrorType {
+		return null;
+	}
+
+
+	value<K, V>(key: K): V | null {
 		return null;
 	}
 }
@@ -126,10 +140,16 @@ function propagateCancel(parent: Context, child: Canceler): void {
 
 // parentCancelCtx follows a chain of parent references until it finds a cancelCtx.
 function parentCancelCtx(parent: Context): CancelCtx | null {
-	if (parent instanceof CancelCtx) {
-		return parent;
-	} else {
-		return null;
+	let c = parent;
+
+	for (;;) {
+		if (c instanceof CancelCtx) {
+			return c;
+		} else if (c instanceof ValueCtx) {
+			c = c.ctx;
+		} else {
+			return null;
+		}
 	}
 }
 
@@ -171,6 +191,10 @@ class CancelCtx implements Context, Canceler {
 
 	error(): ErrorType {
 		return this.err;
+	}
+
+	value<K, V>(key: K): V | null {
+		return this.parent.value<K, V>(key);
 	}
 
 	// cancel resolves ctx.done() promise, cancels each of c's children, and, if
@@ -282,4 +306,37 @@ class TimerCtx extends CancelCtx {
 			this.timer = undefined;
 		}
 	}
+}
+
+// A ValueCtx carries a key-value pair.
+// It implements Value for that key and delegates all other calls to the embedded Context.
+class ValueCtx implements Context {
+	constructor(public ctx: Context, private key: any, private val: any) {}
+
+	deadline(): Date | null {
+		return this.ctx.deadline();
+	}
+
+	done(): Promise<void> {
+		return this.ctx.done();
+	}
+
+	error(): ErrorType {
+		return this.ctx.error();
+	}
+
+	value<K, V>(key: K): V | null {
+		if (this.key === key) {
+			return <V>(this.val);
+		}
+		return this.ctx.value<K, V>(key);
+	}
+}
+
+// withValue returns a copy of parent in which the value associated with key is val.
+//
+// Use context Values only for request-scoped data that transits processes and
+// APIs, not for passing optional parameters to functions.
+export function withValue<K, V>(parent: Context, key: K, value: V): Context {
+	return new ValueCtx(parent, key, value);
 }

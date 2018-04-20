@@ -12,9 +12,11 @@ Programs that use Contexts should follow these rules to keep interfaces consiste
 
 Do not store Contexts inside a struct type; instead, pass a Context explicitly to each function that needs it. The Context should be the first parameter, typically named ctx:
 
+```typescript
 function doSomething(ctx: context.Context, arg: Arg) {
 	// ... use ctx ...
 }
+```
 
 Use context Values only for request-scoped data that transits processes and APIs, not for passing optional parameters to functions.
 

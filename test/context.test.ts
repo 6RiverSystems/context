@@ -9,6 +9,7 @@ import {
 	background,
 	withCancel,
 	withTimeout,
+	withValue,
 	cancelledErr,
 	deadlineExceededErr,
 } from '../src/context';
@@ -141,6 +142,18 @@ describe('Context', function() {
 				cancelChild();
 				cancelParent();
 			}
+		});
+	});
+
+	describe('withValue', function() {
+		it('should create context with embedded value accessible by the key', function() {
+			const root = withValue(background(), 'foo', 'bar');
+			const [child, cancelChild] = withCancel(root);
+			const grandChild: Context = withValue(child, 'baz', 0);
+			const [grandGrandChild, cancelGrandGrand] = withTimeout(grandChild, 10000);
+
+			expect(grandGrandChild.value('baz')).to.equal(0);
+			expect(grandGrandChild.value('foo')).to.equal('bar');
 		});
 	});
 });

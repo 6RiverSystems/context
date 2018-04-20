@@ -3,6 +3,7 @@
   "version": "0.0.0-develop",
   "description": "",
   "main": "./dist/src/context.js",
+  "types": "./dist/src/context.d.ts",
   "files": [
     "dist",
     "src"
